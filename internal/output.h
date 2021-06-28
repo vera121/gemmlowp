@@ -28,6 +28,17 @@
 #include "../public/output_stages.h"
 #include "simd_wrappers.h"
 
+// <--SNPS EV rounding
+#include <cstdint>
+#include <cstdlib>
+#include <string.h>
+typedef double Scale_type;
+#define LLSHL1(x) (1LL<<(x))
+#define LL_ROUND(X,shift) /* (unbiased) round-to-even */ \
+		((X + ((X >> (shift)) & 1) + (LLSHL1(shift-1)-1)) >> (shift))
+typedef signed long long SLL;
+// SNPS EV rounding-->
+
 namespace gemmlowp {
 
 template <typename OutputStage, typename InputBufferType>
@@ -161,17 +172,37 @@ struct OutputStageEvalBufferImpl<OutputStageScaleInt32ByFixedPointAndExponent,
   }
 
   OutputType Eval(InputType input) const {
-	printf("yche_test: Gemmlowp OutputStageEvalBufferImpl run Eval\n");
     OutputType output;
     using RegisterType = typename InputType::RegisterType;
     const RegisterType result_offset_after_shift =
         Dup<RegisterType>(output_stage.result_offset_after_shift);
+
+    enum Rmode { R_double_round, R_ev_round };
+    auto tell = []() {
+	const char* QR = getenv("TF_QUANTIZED_ROUND");
+	if (QR == 0) return R_double_round;
+	return
+		strcmp(QR,"EV")==0?R_ev_round:
+		(printf("Unrecognized rounding mode %s\n",QR), R_double_round);
+	};
+	static const Rmode QR = tell();
+
     for (int i = 0; i < InputType::kRegisterCount; i++) {
-      const RegisterType mulhigh_val = SaturatingRoundingDoublingHighMul(
-          ShiftLeft(input.reg[i], left_shift),
-          output_stage.result_fixedpoint_multiplier);
-      output.reg[i] = Add(RoundingDivideByPOT(mulhigh_val, right_shift),
-                          result_offset_after_shift);
+      if (QR == R_double_round)
+      {
+	    const RegisterType mulhigh_val = SaturatingRoundingDoublingHighMul(
+			ShiftLeft(input.reg[i], left_shift),
+			output_stage.result_fixedpoint_multiplier);
+		output.reg[i] = Add(RoundingDivideByPOT(mulhigh_val, right_shift),
+			result_offset_after_shift);
+      }
+      else if (QR == R_ev_round)
+      {
+        SLL acc = SLL(input.reg[i]);    // Assumed to be an integer already.
+        acc *= unsigned(output_stage.result_fixedpoint_multiplier);
+        output.reg[i] = Add(double(LL_ROUND(acc, unsigned(output_stage.result_exponent))),
+            result_offset_after_shift);
+      }
     }
     return output;
   }
