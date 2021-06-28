@@ -161,6 +161,7 @@ struct OutputStageEvalBufferImpl<OutputStageScaleInt32ByFixedPointAndExponent,
   }
 
   OutputType Eval(InputType input) const {
+	printf("yche_test: Gemmlowp OutputStageEvalBufferImpl run Eval\n");
     OutputType output;
     using RegisterType = typename InputType::RegisterType;
     const RegisterType result_offset_after_shift =
