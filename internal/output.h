@@ -200,7 +200,8 @@ struct OutputStageEvalBufferImpl<OutputStageScaleInt32ByFixedPointAndExponent,
       {
         SLL acc = SLL(input.reg[i]);    // Assumed to be an integer already.
         acc *= unsigned(output_stage.result_fixedpoint_multiplier);
-        output.reg[i] = Add(double(LL_ROUND(acc, unsigned(output_stage.result_exponent))),
+        double result = double(LL_ROUND(acc, unsigned(output_stage.result_exponent)));
+        output.reg[i] = Add(Dup<RegisterType>(result),
             result_offset_after_shift);
       }
     }
