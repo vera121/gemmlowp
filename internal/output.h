@@ -190,11 +190,11 @@ struct OutputStageEvalBufferImpl<OutputStageScaleInt32ByFixedPointAndExponent,
 	static bool show_data_bool = getenv("TF_SHOW_DATA") != 0;
 	if (show_data_bool)
 	{
-	  printf("mul=%d, shift=%d, offset=%d\n",
+	  printf("TF Data mul=%d, shift=%d, offset=%d\n",
           output_stage.result_fixedpoint_multiplier, output_stage.result_exponent,
           result_offset_after_shift);
 	  for (int i = 0; i < InputType::kRegisterCount; i++) {
-	    printf("%4d = %f\n",i,input.reg[i]);
+	    printf("%4d = %d\n",i,input.reg[i]);
 	  }
 	}
 
@@ -218,8 +218,9 @@ struct OutputStageEvalBufferImpl<OutputStageScaleInt32ByFixedPointAndExponent,
 
       if (show_data_bool)
       {
+    	printf("TF Data after scaling:\n")
 	    for (int i = 0; i < InputType::kRegisterCount; i++) {
-		  printf("%4d = %f\n",i,output.reg[i]);
+		  printf("%4d = %d\n",i,output.reg[i]);
         }
       }
     }
