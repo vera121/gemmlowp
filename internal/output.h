@@ -218,7 +218,7 @@ struct OutputStageEvalBufferImpl<OutputStageScaleInt32ByFixedPointAndExponent,
 
       if (show_data_bool)
       {
-    	printf("TF Data after scaling:\n")
+        printf("TF Data after scaling:\n");
 	    for (int i = 0; i < InputType::kRegisterCount; i++) {
 		  printf("%4d = %d\n",i,output.reg[i]);
         }
